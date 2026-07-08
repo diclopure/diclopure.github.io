@@ -101,11 +101,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .model-pill { margin-right: auto; padding: .35rem .7rem; background: var(--ink); color: var(--mint); border-radius: 99px; font-size: .7rem; font-weight: 800; }
 .control-group { margin: 1.55rem 0; }
 .control-group label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; font-size: .87rem; font-weight: 700; }
-.control-group output { direction: ltr; color: var(--mint-dark); background: #e9f7f4; padding: .28rem .5rem; border-radius: 7px; font-size: .78rem; min-width: 78px; text-align: center; }
-input[type="range"] { width: 100%; height: 5px; appearance: none; border-radius: 99px; outline: none; background: linear-gradient(to left, #dfe7e4 0%, #dfe7e4 100%); cursor: pointer; }
+.value-editor { min-height: 38px; display: inline-flex; align-items: center; direction: ltr; color: var(--mint-dark); background: #e9f7f4; border: 1px solid #cfe9e2; border-radius: 9px; overflow: hidden; flex: 0 0 auto; }
+.value-editor input { width: 86px; min-width: 0; padding: .45rem .35rem .45rem .6rem; border: 0; outline: 0; background: transparent; color: var(--mint-dark); font-weight: 900; text-align: center; direction: ltr; }
+.value-editor input:focus { background: #fff; box-shadow: inset 0 0 0 2px var(--mint-dark); }
+.value-editor b { padding: 0 .55rem; border-left: 1px solid #cfe9e2; font-size: .67rem; white-space: nowrap; }
+input[type="range"] { width: 100%; height: 5px; appearance: none; border-radius: 99px; outline: none; direction: ltr; background: linear-gradient(to left, #dfe7e4 0%, #dfe7e4 100%); cursor: pointer; }
 input[type="range"]::-webkit-slider-thumb { appearance: none; width: 19px; height: 19px; border-radius: 50%; background: var(--mint-dark); border: 4px solid #fff; box-shadow: 0 0 0 1px var(--mint-dark); }
 input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--mint-dark); border: 4px solid #fff; box-shadow: 0 0 0 1px var(--mint-dark); }
 .range-labels { display: flex; justify-content: space-between; direction: ltr; color: #93a09f; font-size: .68rem; margin-top: .45rem; }
+.control-help { display: block; margin-top: .4rem; color: var(--muted); font-size: .66rem; }
 .compare-toggle { display: flex; align-items: center; gap: .7rem; padding: 1rem 0; margin: .4rem 0 1.2rem; border-top: 1px solid var(--line); cursor: pointer; }
 .compare-toggle input { position: absolute; opacity: 0; pointer-events: none; }
 .toggle-ui { width: 42px; height: 23px; border-radius: 99px; background: #c7d2cf; position: relative; flex: 0 0 auto; transition: background .2s ease; }

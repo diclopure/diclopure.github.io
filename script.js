@@ -9,6 +9,13 @@
     simulationTime: $("#simulationTime"),
     compareModels: $("#compareModels")
   };
+  const numberInputs = {
+    concentration: $("#concentrationNumber"),
+    carbonMass: $("#carbonMassNumber"),
+    flowRate: $("#flowRateNumber"),
+    simulationTime: $("#simulationTimeNumber")
+  };
+  const rangeKeys = ["concentration", "carbonMass", "flowRate", "simulationTime"];
   const canvas = $("#breakthroughChart");
   const ctx = canvas.getContext("2d");
   let currentResult = null;
@@ -18,10 +25,11 @@
   // Validated use requires replacing these preliminary coefficients with the
   // final nonlinear-regression output described in the graduation report.
   function parameters(c, mass, flow) {
-    const flowExponent = 1.12 - 0.25 * (mass - 0.5);
+    const calibrationBoundedMass = Math.min(1.5, Math.max(0.5, mass));
+    const flowExponent = 1.12 - 0.25 * (calibrationBoundedMass - 0.5);
     const tau = 16.47 * Math.pow(mass / 0.5, 0.33) * Math.pow(20 / c, 0.215) * Math.pow(3 / flow, flowExponent);
-    const shape = 1.55 + 0.7 * ((c - 20) / 80) + 0.2 * ((flow - 3) / 2) - 0.1 * (mass - 0.5);
-    return { tau: Math.max(0.5, tau), shape: Math.max(1.1, shape) };
+    const shape = 1.55 + 0.7 * ((c - 20) / 80) + 0.2 * ((flow - 3) / 2) - 0.1 * (calibrationBoundedMass - 0.5);
+    return { tau: Math.min(1e7, Math.max(0.5, tau)), shape: Math.max(1.1, shape) };
   }
 
   function yanRatio(t, p) {
@@ -62,25 +70,28 @@
 
   function getState() {
     return {
-      c: Number(inputs.concentration.value),
-      mass: Number(inputs.carbonMass.value),
-      flow: Number(inputs.flowRate.value),
-      time: Number(inputs.simulationTime.value),
+      c: Number(numberInputs.concentration.value),
+      mass: Number(numberInputs.carbonMass.value),
+      flow: Number(numberInputs.flowRate.value),
+      time: Number(numberInputs.simulationTime.value),
       compare: inputs.compareModels.checked
     };
   }
 
-  function updateOutputs(state) {
-    $("#concentrationOutput").textContent = `${state.c.toFixed(0)} mg/L`;
-    $("#carbonMassOutput").textContent = `${state.mass.toFixed(1)} g`;
-    $("#flowRateOutput").textContent = `${state.flow.toFixed(1)} mL/min`;
-    $("#simulationTimeOutput").textContent = `${state.time.toFixed(0)} min`;
-
-    Object.values(inputs).forEach((input) => {
-      if (input.type !== "range") return;
+  function updateOutputs() {
+    rangeKeys.forEach((key) => {
+      const input = inputs[key];
       const progress = ((Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100;
       input.style.background = `linear-gradient(to left, #dfe7e4 ${100-progress}%, #0c8f79 ${100-progress}%, #0c8f79 100%)`;
     });
+  }
+
+  function setControlValue(key, value) {
+    const range = inputs[key];
+    const number = numberInputs[key];
+    const bounded = Math.min(Number(range.max), Math.max(Number(range.min), Number(value)));
+    range.value = String(bounded);
+    number.value = String(bounded);
   }
 
   function checkRange(state) {
@@ -105,7 +116,8 @@
 
   function calculate() {
     const state = getState();
-    updateOutputs(state);
+    if (![state.c, state.mass, state.flow, state.time].every(value => Number.isFinite(value) && value > 0)) return;
+    updateOutputs();
     const issues = checkRange(state);
     const p = parameters(state.c, state.mass, state.flow);
     const ratio = yanRatio(state.time, p);
@@ -249,18 +261,38 @@
 
   function loadQuery() {
     const q = new URLSearchParams(location.search);
-    const mappings = [["c", inputs.concentration], ["m", inputs.carbonMass], ["q", inputs.flowRate], ["t", inputs.simulationTime]];
-    mappings.forEach(([key,input]) => {
-      if (!q.has(key)) return;
-      const value = Number(q.get(key));
-      if (Number.isFinite(value)) input.value = Math.min(Number(input.max), Math.max(Number(input.min), value));
+    const mappings = [["c", "concentration"], ["m", "carbonMass"], ["q", "flowRate"], ["t", "simulationTime"]];
+    mappings.forEach(([queryKey, controlKey]) => {
+      if (!q.has(queryKey)) return;
+      const value = Number(q.get(queryKey));
+      if (Number.isFinite(value)) setControlValue(controlKey, value);
     });
     inputs.compareModels.checked = q.get("compare") === "1";
   }
 
-  Object.values(inputs).forEach(input => input.addEventListener("input", calculate));
+  rangeKeys.forEach((key) => {
+    const range = inputs[key];
+    const number = numberInputs[key];
+    range.addEventListener("input", () => {
+      number.value = range.value;
+      calculate();
+    });
+    number.addEventListener("input", () => {
+      const value = Number(number.value);
+      if (!Number.isFinite(value) || value <= 0) return;
+      range.value = String(Math.min(Number(range.max), Math.max(Number(range.min), value)));
+      calculate();
+    });
+    number.addEventListener("change", () => {
+      const fallback = Number(range.value);
+      const value = Number.isFinite(Number(number.value)) ? Number(number.value) : fallback;
+      setControlValue(key, value);
+      calculate();
+    });
+  });
+  inputs.compareModels.addEventListener("input", calculate);
   $("#resetButton").addEventListener("click", () => {
-    inputs.concentration.value = 20; inputs.carbonMass.value = 1; inputs.flowRate.value = 3; inputs.simulationTime.value = 20; inputs.compareModels.checked = false; history.replaceState({}, "", location.pathname); calculate();
+    setControlValue("concentration", 20); setControlValue("carbonMass", 1); setControlValue("flowRate", 3); setControlValue("simulationTime", 20); inputs.compareModels.checked = false; history.replaceState({}, "", location.pathname); calculate();
   });
   $("#downloadReport").addEventListener("click", downloadReport);
   $("#shareScenario").addEventListener("click", shareScenario);
