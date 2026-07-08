@@ -1,6 +1,18 @@
 (() => {
   "use strict";
 
+  // Always open a fresh visit at the top, even when an old shared link still
+  // contains a section hash or the temporary deployment refresh parameter.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  const initialUrl = new URL(window.location.href);
+  initialUrl.searchParams.delete("refresh");
+  initialUrl.hash = "";
+  history.replaceState({}, "", `${initialUrl.pathname}${initialUrl.search}`);
+  const startAtTop = () => window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  startAtTop();
+  requestAnimationFrame(startAtTop);
+  window.addEventListener("load", startAtTop, { once: true });
+
   const $ = (selector) => document.querySelector(selector);
   const inputs = {
     concentration: $("#concentration"),
