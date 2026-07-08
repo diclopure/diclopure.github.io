@@ -4,7 +4,7 @@
 
 ## الموقع العام
 
-https://mohammedaa-os.github.io/diclopure/
+https://diclopure.github.io/
 
 ## التشغيل المحلي
 
